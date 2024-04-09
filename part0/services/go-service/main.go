@@ -25,9 +25,25 @@ func pong(w http.ResponseWriter, r *http.Request) {
 
   responseCode := responseCodes[rand.Intn(len(responseCodes))]
 
+  pongCount.WithLabelValues(strconv.Itoa(responseCode)).Inc()
+
   render.Status(r, responseCode)
 
   render.JSON(w, r, response)
+}
+
+var (
+ pongCount = prometheus.NewCounterVec(
+  prometheus.CounterOpts{
+   Name: "ping_total_number_of_requests",
+   Help: "Number of ping requests.",
+  },
+  []string{"status"},
+ )
+)
+
+func initPrometheusMetric() {
+ prometheus.MustRegister(pongCount)
 }
 
 func Routes() *chi.Mux {
@@ -68,6 +84,8 @@ func initResponseCodes() {
 
 func main() {
   initResponseCodes()
+    initPrometheusMetric()
+
   router := Routes()
   port := 80
 
